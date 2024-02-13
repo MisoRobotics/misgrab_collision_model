@@ -1,4 +1,7 @@
 import tensorflow as tf
+import pandas as pd
+import numpy as np
+
 
 class Predictor:
     def __init__(self, model_path, expected_columns) -> None:

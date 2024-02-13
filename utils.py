@@ -1,6 +1,18 @@
 import yaml
 import pandas as pd
 
+import sys
+
+# Set maximum line width to maximum integer value
+sys.display_width = sys.maxsize
+
+# Set maximum line count to maximum integer value
+sys.display_height = sys.maxsize
+
+# Set maximum item count to maximum integer value
+sys.display_limit = sys.maxsize
+
+
 def read_yaml_to_dict(filepath: str) -> dict:
     """
     Reads a YAML file and converts it to a Python dictionary.
@@ -353,10 +365,41 @@ COL_TO_DROP_EARLY = [
     "Failure Description",
     "basket_state",
 ]
+# def combine_single_row_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+#     # Ensure both DataFrames have only one row
+#     if len(df1) != 1 or len(df2) != 1:
+#         raise ValueError("Both DataFrames must have exactly one row.")
+    
+#     # Combine the DataFrames, giving priority to df1 in case of overlapping columns
+#     combined_df = pd.concat([df1, df2], axis=1)
+    
+#     # Drop duplicate columns, keeping the first occurrence (from df1)
+#     combined_df = combined_df.loc[:, ~combined_df.columns.duplicated()]
+    
+#     return combined_df
+
+def combine_single_row_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
+    # Ensure both DataFrames have only one row
+    if len(df1) != 1 or len(df2) != 1:
+        raise ValueError("Both DataFrames must have exactly one row.")
+    
+    # Convert the single-row DataFrames to Series to flatten them
+    series1 = df1.iloc[0]
+    series2 = df2.iloc[0]
+    
+    # Combine the Series, giving priority to df1 in case of overlapping columns
+    combined_series = pd.concat([series1, series2[~series2.index.isin(series1.index)]])
+    
+    # Convert the combined Series back to a single-row DataFrame
+    combined_df = pd.DataFrame([combined_series])
+    
+    return combined_df
+
 
 def prepare_input_data(slot_df: pd.DataFrame, input_localization_data: pd.DataFrame, feature_cols: list, cols_to_drop: list, window_list: list[int], col_to_avg_list: list[str], basket_id: int, fryer_slot_id: int, basket_state: str, feature_dummy_dict: dict, cols_to_rename: list[str], cols_to_rename_to: list[str], col_to_drop_early: list[str]) -> pd.DataFrame:
     
     input_localization_data = rename_columns(input_localization_data, cols_to_rename, cols_to_rename_to) 
+
 
 
     #Add dummies to input_localization_data df:
@@ -366,6 +409,9 @@ def prepare_input_data(slot_df: pd.DataFrame, input_localization_data: pd.DataFr
     
     # drop_cols(input_localization_data, COL_TO_DROP_EARLY)
 
+    # print(f"len of slot df: {len(slot_df)}")
+    # print(f"slot df head: \n\n\n {slot_df[(slot_df['basket_id'] == 50) ]}")# & (slot_df['fryer_slot_id'] == 1)]}")
+    # print(slot_df)
     rolling_avg_df_list = []
     for window in window_list:
         rolling_avg_df_list.append(add_rolling_means_for_specific_criteria(slot_df, col_to_avg_list, window, fryer_slot_id, basket_id, basket_state))
@@ -377,11 +423,29 @@ def prepare_input_data(slot_df: pd.DataFrame, input_localization_data: pd.DataFr
         # print("\n\n\n")
 
     combined_df = pd.concat(rolling_avg_df_list, axis=1)
-    combined_df = pd.concat([input_localization_data, combined_df], axis=1)
 
-    drop_cols(combined_df, col_to_drop_early)
+    # print("\n\nafter adding the averages combined data:\n\n")
+    # print(combined_df.head())
 
-    return combined_df
+    # combined_df = pd.concat([input_localization_data, combined_df], axis=1)
+
+    combined_df2 = combine_single_row_dfs(input_localization_data, combined_df)
+    # print(f"\n\ninput loc: {input_localization_data}")
+
+    # print(f"\n\ncombined_df before: {combined_df2}")
+
+ 
+
+    drop_cols(combined_df2, col_to_drop_early)
+
+    add_site_id_categorical(combined_df2, 'jb93')
+
+    # for col in combined_df2.columns:
+    #         print(col)
+
+
+
+    return combined_df2
 
 
 
@@ -443,27 +507,52 @@ def add_categoricals(df, categorical_cols, source_col):
 #     return filtered_df
 
 
+# def add_rolling_means_for_specific_criteria(df: pd.DataFrame, columns_to_normalize: list[str], window_size: int, fryer_slot_id: int, basket_id: int, basket_state: str) -> pd.DataFrame:
+#     # Filter the DataFrame and create a copy to avoid SettingWithCopyWarning
+#     filtered_df = df[(df['fryer_slot_id'] == fryer_slot_id) & 
+#                      (df['basket_id'] == basket_id) & 
+#                      (df['basket_state'] == basket_state)].copy()
+
+#     # Initialize an empty DataFrame to store the new columns
+#     new_df = pd.DataFrame(index=[0])  # DataFrame with a single row
+#     # Calculate the mean for the last `window_size` rows (or fewer) for each specified column
+#     for column in columns_to_normalize:
+#         # Ensure the column is numeric to avoid NotImplementedError and DataError
+#         if pd.api.types.is_numeric_dtype(filtered_df[column]):
+#             mean_value = filtered_df[column].tail(window_size).mean()
+#             new_df[f'{column}_mean_since_beginning_window_{window_size}'] = [mean_value]
+#         else:
+#             # Optionally handle non-numeric columns differently, e.g., skip or raise a warning
+#             print(f"Warning: Column '{column}' is not numeric and was skipped.")
+
+#     return new_df
+
+
+
 def add_rolling_means_for_specific_criteria(df: pd.DataFrame, columns_to_normalize: list[str], window_size: int, fryer_slot_id: int, basket_id: int, basket_state: str) -> pd.DataFrame:
-    # Filter the DataFrame and create a copy to avoid SettingWithCopyWarning
+    # Filter the DataFrame and check if the result is empty
     filtered_df = df[(df['fryer_slot_id'] == fryer_slot_id) & 
                      (df['basket_id'] == basket_id) & 
-                     (df['basket_state'] == basket_state)].copy()
+                     (df['basket_state'] == basket_state)]
+
+    if filtered_df.empty:
+        print("No data matches the given criteria.")
+        return pd.DataFrame()  # Return an empty DataFrame or handle as needed
 
     # Initialize an empty DataFrame to store the new columns
-    new_df = pd.DataFrame(index=[0])  # DataFrame with a single row
+    new_df = pd.DataFrame()
 
     # Calculate the mean for the last `window_size` rows (or fewer) for each specified column
     for column in columns_to_normalize:
-        # Ensure the column is numeric to avoid NotImplementedError and DataError
         if pd.api.types.is_numeric_dtype(filtered_df[column]):
-            mean_value = filtered_df[column].tail(window_size).mean()
+            # Adjust window size if necessary
+            actual_window_size = min(len(filtered_df), window_size)
+            mean_value = filtered_df[column].tail(actual_window_size).mean()
             new_df[f'{column}_mean_since_beginning_window_{window_size}'] = [mean_value]
         else:
-            # Optionally handle non-numeric columns differently, e.g., skip or raise a warning
             print(f"Warning: Column '{column}' is not numeric and was skipped.")
 
     return new_df
-
 
 
 FEATURE_COLS_TO_DROP_FROM_INCOMING_LOCALIZATION_DATA = [
@@ -485,6 +574,32 @@ FEATURE_COLS_TO_DROP_FROM_SLOT_DF = [
 ]
 
 
+def add_site_id_categorical(df, site_id):
+    
+    site_id_possibilities = [
+        'site_id_jb93',
+        'site_id_wc26',
+        'site_id_wc74',
+        'site_id_wccg',
+        'site_id_wcchic101',
+        'site_id_wcchic103',
+        'site_id_wcchic30',
+        'site_id_wcchic42',
+        'site_id_wcdetr30',
+        'site_id_wcdetr36',
+        'site_id_wcstls44',
+        'site_id_wcstls50',
+        'site_id_wcstls63',
+        'site_id_wcstls65',
+    ]
+
+    for site in site_id_possibilities:
+        if site_id in site:
+            df[site] = int(1)
+        else:
+            df[site] = int(0)
+
+
 
 
 
@@ -503,6 +618,12 @@ EXPECTED_COLUMNS = []
 ENGINEER_FEATURES_CONFIG_FILE_PATH = "/home/sam/Downloads/misgrab_prediction/package_model2/engineer_features_config.yaml"
 
 df_to_test = pd.read_csv(CSV_PATH)
+# print("len of df to test:  ", len(df_to_test))
+# print(f"len of df to test: {len(df_to_test)}")
+# print(f"df_to_test head: \n\n\n {df_to_test[(df_to_test['basket_id'] == 50) ]}")# & (slot_df['fryer_slot_id'] == 1)]}")
+# print(df_to_test)
+
+
 
 # print("\n\ndf_to_test_cols:\n\n")
 # for col in df_to_test.columns:
@@ -513,14 +634,32 @@ pd.set_option('display.max_columns', 1000)  # Adjust the number of columns to di
 pd.set_option('display.max_colwidth', 10000)  # Adjust the column width to display full content
 
 new_df = create_slot_df(df_to_test, 'misgrabs', 50000, 4, FEATURE_DUMMY_DICT)
+
 # print(new_df[['failure_description','error_code', 'error_code_1.0', 'error_code_0.0']][new_df['failure_description'] != 'no_failure'].head(300))
 # new_df = new_df.sample(n=15)
 # print(new_df.sample(n=10))
 
+
 # def prepare_input_data(slot_df: pd.DataFrame, input_localization_data: pd.DataFrame, feature_cols: list, cols_to_drop: list, window_list: list[int], col_to_avg_list: list[str], basket_id: int, fryer_slot_id: int, basket_state: str):
+
+# print("\n\nbefore:\n\n")
+# # for col in new_df.columns:
+# #     print(col)
+# # print(new_df.dtypes)
+# print(new_df.head(1))
 
 new_df = rename_columns(new_df, COLS_TO_RENAME, COLS_TO_RENAME_TO) 
 # def rename_columns(df: pd.DataFrame, original_columns: list[str], new_columns: list[str]) -> pd.DataFrame:
+# print("len of new_df after rename\n\n:  ", len(new_df))
+# print(f"new df: \n\n {print(new_df.iloc[:, :10])}")
+
+
+# print("\n\nafter:\n\n")
+# # print(new_df.dtypes)
+# print(new_df.head(1))
+
+# for col in new_df.columns:
+#     print(col)
 
 # print("\n\nnew df after renaming:\n\n")
 # for col in new_df.columns:
@@ -534,14 +673,18 @@ input_df = pd.read_csv(CSV_PATH).sample(n=1)
 # print(new_df.head())
 # combined_df = prepare_input_data(new_df, input_df, [], [], AVG_WINDOWS, COLS_TO_AVG, int(input_df['basket_id']), int(input_df['fryer_slot_id']), str(input_df['basket_state']), FEATURE_DUMMY_DICT, COLS_TO_RENAME, COLS_TO_RENAME_TO, COL_TO_DROP_EARLY)
 
-combined_df = prepare_input_data(new_df, input_df, [], [], AVG_WINDOWS, ec_col, int(input_df['basket_id']), int(input_df['fryer_slot_id']), str(input_df['basket_state']), FEATURE_DUMMY_DICT, COLS_TO_RENAME, COLS_TO_RENAME_TO, COL_TO_DROP_EARLY)
+# combined_df = prepare_input_data(new_df, input_df, [], [], AVG_WINDOWS, ec_col, int(input_df['basket_id']), int(input_df['fryer_slot_id']), str(input_df['basket_state']), FEATURE_DUMMY_DICT, COLS_TO_RENAME, COLS_TO_RENAME_TO, COL_TO_DROP_EARLY)
+
+
+combined_df = prepare_input_data(new_df, input_df, [], [], AVG_WINDOWS, ec_col, 56, 4, 'frying', FEATURE_DUMMY_DICT, COLS_TO_RENAME, COLS_TO_RENAME_TO, COL_TO_DROP_EARLY)
+
 
 # for col in combined_df.columns:
 #     print(col)
 # combined_df.head(1)
 first_row_as_list = combined_df.head(1).values.tolist()
 
-print(first_row_as_list)
+# print(first_row_as_list)
 
 
 def print_first_row_values(df: pd.DataFrame):
@@ -556,7 +699,7 @@ def print_first_row_values(df: pd.DataFrame):
 
 # Example usage:
 # Assuming 'df' is your DataFrame
-print_first_row_values(combined_df)
+# print_first_row_values(combined_df)
 
 
 #cols in slot_df:
@@ -690,14 +833,14 @@ incoming_localization_data_cols = [
 
 
 feature_cols = [
-    'behavior_name', #NOT DIRECTLY INCL IN FEATURES
-    'site_id', #NOT DIRECTLY INCL IN FEATURES
-    'behavior_start_time', #NOT DIRECTLY INCL IN FEATURES
-    'basket_id', #NOT DIRECTLY INCL IN FEATURES
-    'error_code', #NOT INCL IN FEATURES AT ALL
-    'basket_state', #NOT DIRECTLY INCL IN FEATURES
-    'fryer_slot_id', #NOT DIRECTLY INCL IN FEATURES
-    'Failure Description', #NOT INCL IN FEATURES AT ALL
+    # 'behavior_name', #NOT DIRECTLY INCL IN FEATURES
+    # 'site_id', #NOT DIRECTLY INCL IN FEATURES
+    # 'behavior_start_time', #NOT DIRECTLY INCL IN FEATURES
+    # 'basket_id', #NOT DIRECTLY INCL IN FEATURES
+    # 'error_code', #NOT INCL IN FEATURES AT ALL
+    # 'basket_state', #NOT DIRECTLY INCL IN FEATURES
+    # 'fryer_slot_id', #NOT DIRECTLY INCL IN FEATURES
+    # 'Failure Description', #NOT INCL IN FEATURES AT ALL
     'fryer_target_abs_offset_x',
     'fryer_target_abs_offset_y',
     'fryer_target_abs_offset_z',
@@ -795,8 +938,8 @@ feature_cols = [
     'basket_id_117',
     'basket_id_118',
     'basket_id_119',
-    'error_code_0.0', #NOT INCL IN FEATURES AT ALL
-    'error_code_1.0', #NOT INCL IN FEATURES AT ALL
+    # 'error_code_0.0', #NOT INCL IN FEATURES AT ALL
+    # 'error_code_1.0', #NOT INCL IN FEATURES AT ALL
     'basket_state_frying',
     'basket_state_hanging',
     'behavior_name_fryer_to_dump_to_fill_to_fryer', #this one
@@ -1204,4 +1347,14 @@ feature_cols = [
     'basket_source_rel_offset_z_mean_since_beginning_window_1001',
 ]
 
+# print(combined_df.head(1))
+
 print(len(feature_cols), len(combined_df.columns.to_list()))
+
+
+input_data = combined_df[feature_cols]
+
+print(len(input_data.columns))
+
+# Convert DataFrame to numpy array
+# input_data = input_data.to_numpy()
