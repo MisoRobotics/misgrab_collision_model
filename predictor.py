@@ -21,7 +21,7 @@ class Predictor:
             input_data = input_data[self.expected_columns]
             
             # Convert DataFrame to numpy array
-            input_data = input_data.to_numpy()
+            input_data = input_data.to_numpy().astype(np.float32)
         
         input_dict = {'dense_input': tf.constant(input_data)}
         prediction = self.serving_default(**input_dict)

@@ -1,12 +1,16 @@
     
 import pandas as pd
 import numpy as np
+import utils
+
 
 class SlotDataFrame:
-    def __init__(main_df, fryer_slot_id, slot_df_len_limit) -> None:
+    def __init__(self, main_df, fryer_slot_id, config_dict) -> None:
         """instantiates slot_df from main df along with row lim, lim"""
-        self.slot_df_len_limit = slot_df_len_limit
-        self.slot_df = main_df[main_df['fryer_slot_id'] == fryer_slot_id].tail(slot_df_len_limit)
+        self.config_dict = config_dict
+        self.slot_df_len_limit = config_dict["SLOT_DF_LEN_LIMIT"]
+        self.slot_df = utils.create_slot_df(main_df, self.config_dict["MISGRABS_OR_COLLISIONS"], self.slot_df_len_limit, fryer_slot_id, self.config_dict["FEATURE_DUMMY_DICT"])
+        self.fryer_slot_id = fryer_slot_id
 
     def get_len(self) -> int:
         """returns length of slot_df"""
@@ -24,12 +28,36 @@ class SlotDataFrame:
         adds latest row to slot_df"""
         if self.get_len >= self.slot_df_len_limit:
             self.pop_row()
+        for source_col, categorical_cols in self.config_dict['FEATURE_DUMMY_DICT'].items():
+            utils.add_categoricals(incoming_row, categorical_cols, source_col)
         self.slot_df = pd.DataFrame([incoming_row], columns=self.slot_df.columns).append(self.slot_df, ignore_index=True)
     
-    def get_model_input(self, incoming_localization_data) -> np.array:
+
+    def get_model_input(self, incoming_localization_data) -> pd.DataFrame:
         """takes in the incoming localization data, adds the other feature columns to it 
-        including average based ones, returns numpy array to be used as input to pred model"""
-        pass
-        #cols in incoming_localizaton_data:
-        #same as the columns in the slot_df with the exception of whether the execution was successful or not / error codes/ stuff we can't
-        #know until it happens 
+        including average based ones, returns one row df to be used as input to pred model"""
+        new_slot_df = utils.rename_columns(self.slot_df, self.config_dict["COLS_TO_RENAME"], self.config_dict["COLS_TO_RENAME_TO"])
+        combined_input_and_slot_avgs_df = utils.prepare_input_data(new_slot_df, incoming_localization_data, self.config_dict["AVG_WINDOWS"], self.config_dict["COL_TO_AVG"],
+                                                                    int(incoming_localization_data.iloc[0]["basket_id"]), int(incoming_localization_data.iloc[0]["fryer_slot_id"]), 
+                                                                   str(incoming_localization_data.iloc[0]["basket_state"]), self.config_dict["FEATURE_DUMMY_DICT"],
+                                                                   self.config_dict["COLS_TO_RENAME"], self.config_dict["COLS_TO_RENAME_TO"], 
+                                                                   self.config_dict["COL_TO_DROP_EARLY"], self.config_dict["SITE_ID"], self.config_dict["SITE_ID_POSSIBILITIES"])
+
+        return combined_input_and_slot_avgs_df
+    
+# df_to_test = pd.read_csv(CSV_PATH) #IGNORE
+
+
+#PAIR DOWN SLOT DATAFRAME, ADD COLS FOR CATEGORIES
+
+# new_df = create_slot_df(df_to_test, 'misgrabs', 50000, 4, FEATURE_DUMMY_DICT)
+
+#RENAME DATAFRAME COLS IN SLOT DF
+# new_df = rename_columns(new_df, COLS_TO_RENAME, COLS_TO_RENAME_TO) 
+
+
+#PICK RANDOM SAMPLE INPUT ROW
+# input_df = pd.read_csv(CSV_PATH).sample(n=1)
+
+
+# combined_df = prepare_input_data(new_df, input_df, AVG_WINDOWS, ec_col, 56, 4, 'frying', FEATURE_DUMMY_DICT, COLS_TO_RENAME, COLS_TO_RENAME_TO, COL_TO_DROP_EARLY, "wc26")
