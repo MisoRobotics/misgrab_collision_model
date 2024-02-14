@@ -142,7 +142,7 @@ COL_TO_AVG:
 - basket_source_rel_offset_y
 - basket_source_rel_offset_z
 COL_TO_DROP_EARLY:
-- 'Unnamed: 0'
+# - 'Unnamed: 0' #ONLY SHOWS UP WITH CSV LOAD #TODO: address this
 - exec_success
 - behavior_name
 - fryer_slot_id

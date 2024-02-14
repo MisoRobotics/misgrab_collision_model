@@ -1,5 +1,7 @@
 import yaml
 import pandas as pd
+import datetime
+import time
 
 def read_yaml_to_dict(filepath: str) -> dict:
     """
@@ -17,8 +19,6 @@ def read_yaml_to_dict(filepath: str) -> dict:
         except yaml.YAMLError as e:
             print(f"Error reading YAML file: {e}")
             return None
-
-# def convert_incoming_loc_to_proper_df(df: pd.DataFrame, misgrabs_or_collisions: str, lim: int, fryer_slot_id: int, feature_dummy_dict: dict) -> pd.DataFrame:
 
 def create_slot_df(df: pd.DataFrame, misgrabs_or_collisions: str, lim: int, fryer_slot_id: int, feature_dummy_dict: dict) -> pd.DataFrame:
     """remove dups, nans, filter for either misgrabs or collisions only, remove unrelated errors (that are not coll/mis)
@@ -59,7 +59,7 @@ def create_slot_df(df: pd.DataFrame, misgrabs_or_collisions: str, lim: int, frye
     #Add dummies:
     for source_col, categorical_cols in feature_dummy_dict.items():
         add_categoricals(df, categorical_cols, source_col)
-
+    # print(f"new slot df: {df.head()}")
     return df
 
 
@@ -175,21 +175,13 @@ def get_n_random_input_rows_from_csv(n: int, csv_path: str) -> list[pd.DataFrame
         row_lst.append(df.sample(n=1))
     return row_lst
 
+# def convert_str_time(str_time: str) -> str:
+#     new_str = f"STR_TO_DATE('{str_time}', '%Y-%m-%d %h:%m:%s')"
+#     return new_str
+def convert_str_time(str_time: str) -> str:
+    # new_str = f"STR_TO_DATE('{str_time}', '%Y-%m-%d %h:%m:%s')"#'%Y-%m-%d-%H:%i'
+    new_str = f"STR_TO_DATE('{str_time}', '%Y-%m-%d-%H:%i')"#
+    return new_str
 
-
-# df_to_test = pd.read_csv(CSV_PATH) #IGNORE
-
-
-#PAIR DOWN SLOT DATAFRAME, ADD COLS FOR CATEGORIES
-
-# new_df = create_slot_df(df_to_test, 'misgrabs', 50000, 4, FEATURE_DUMMY_DICT)
-
-#RENAME DATAFRAME COLS IN SLOT DF
-# new_df = rename_columns(new_df, COLS_TO_RENAME, COLS_TO_RENAME_TO) 
-
-
-#PICK RANDOM SAMPLE INPUT ROW
-# input_df = pd.read_csv(CSV_PATH).sample(n=1)
-
-
-# combined_df = prepare_input_data(new_df, input_df, AVG_WINDOWS, ec_col, 56, 4, 'frying', FEATURE_DUMMY_DICT, COLS_TO_RENAME, COLS_TO_RENAME_TO, COL_TO_DROP_EARLY, "wc26")
+def get_current_time() -> str:
+    return convert_str_time(datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S"))

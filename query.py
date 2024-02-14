@@ -221,7 +221,7 @@ def combine_both_dfs(behaviors_df: pd.DataFrame, offsets_df: pd.DataFrame, behav
 
     if behaviors_df.empty:
         print("behaviors_df is empty")
-        exit()
+        # exit()
 
     extra_columns = [
         "fryer_slot_x_offset_abs",
@@ -334,22 +334,22 @@ def combine_both_dfs(behaviors_df: pd.DataFrame, offsets_df: pd.DataFrame, behav
         # If missing_offset, skip row
         missing_offset = False
         if ft_abs.empty:
-            print(f"no ft_abs offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
+            # print(f"no ft_abs offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
             missing_offset |= True
         if ft_rel.empty:
-            print(f"no ft_rel offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
+            # print(f"no ft_rel offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
             missing_offset |= True
         if ht_abs.empty:
-            print(f"no ht_abs offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
+            # print(f"no ht_abs offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
             missing_offset |= True
         if ht_rel.empty:
-            print(f"no ht_rel offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
+            # print(f"no ht_rel offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
             missing_offset |= True
         if bs_abs.empty:
-            print(f"no bs_abs offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
+            # print(f"no bs_abs offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
             missing_offset |= True
         if bs_rel.empty:
-            print(f"no bs_rel offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
+            # print(f"no bs_rel offset for {b_row['fryer_slot_id']}, {b_row['basket_id']}")
             missing_offset |= True
         if missing_offset:
             continue
@@ -416,23 +416,21 @@ def get_combined_data(behaviors_start_time: str, behaviors_end_time: str, offset
     combined_df = combine_both_dfs(behaviors_df, offsets_df, behaviors_start_time, behaviors_end_time, offsets_start_time, offsets_end_time)
     end = time.time()
     print(end - start)
+    print(f"len of combined_df from query: {len(combined_df)}\n\n")
     return combined_df
 
-def convert_str_time(str_time: str) -> str:
-    new_str = f"STR_TO_DATE('{str_time}', '%Y-%m-%d %h:%m:%s')"
-    print(new_str)
-    return new_str
+# offsets_start_time = "CURRENT_TIMESTAMP - INTERVAL '20' DAY"
+# offsets_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
+# behaviors_start_time = "CURRENT_TIMESTAMP - INTERVAL '10' DAY"
+# behaviors_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
 
-offsets_start_time = "CURRENT_TIMESTAMP - INTERVAL '20' DAY"
-offsets_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
-behaviors_start_time = "CURRENT_TIMESTAMP - INTERVAL '10' DAY"
-behaviors_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
+# offsets_start_time = convert_str_time('2024-02-07-08:26:00')#"STR_TO_DATE('2024-02-17', '%Y-%m-%d %h:%m:%s')"#"CURRENT_TIMESTAMP - INTERVAL '20' DAY"
+# offsets_end_time = convert_str_time('2024-02-07-08:28:00')
+# # behaviors_start_time = "CURRENT_TIMESTAMP - INTERVAL '7' DAY"
+# behaviors_start_time = convert_str_time('2024-02-07-08:26:00')#"STR_TO_DATE('2024-02-17', '%Y-%m-%d %h:%m:%s')"#"UNIX_TIMESTAMP(STR_TO_DATE('2024-02-05', '%Y-%m-%d'))"
+# # behaviors_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
+# behaviors_end_time = convert_str_time('2024-02-07-08:28:00')
+# # behaviors_end_time = "2024-02-07 08:25:00.000"
 
-offsets_start_time = convert_str_time('2024-01-05')#"STR_TO_DATE('2024-02-17', '%Y-%m-%d %h:%m:%s')"#"CURRENT_TIMESTAMP - INTERVAL '20' DAY"
-offsets_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
-# behaviors_start_time = "CURRENT_TIMESTAMP - INTERVAL '7' DAY"
-behaviors_start_time = convert_str_time('2024-02-06')#"STR_TO_DATE('2024-02-17', '%Y-%m-%d %h:%m:%s')"#"UNIX_TIMESTAMP(STR_TO_DATE('2024-02-05', '%Y-%m-%d'))"
-behaviors_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
-
-ab = get_combined_data(behaviors_start_time, behaviors_end_time, offsets_start_time, offsets_end_time)
-print(len(ab))
+# ab = get_combined_data(behaviors_start_time, behaviors_end_time, offsets_start_time, offsets_end_time)
+# print(len(ab))

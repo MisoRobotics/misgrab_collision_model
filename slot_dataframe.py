@@ -11,7 +11,7 @@ class SlotDataFrame:
         self.slot_df_len_limit = config_dict["SLOT_DF_LEN_LIMIT"]
         self.slot_df = utils.create_slot_df(main_df, self.config_dict["MISGRABS_OR_COLLISIONS"], self.slot_df_len_limit, fryer_slot_id, self.config_dict["FEATURE_DUMMY_DICT"])
         self.fryer_slot_id = fryer_slot_id
-
+        
     def get_len(self) -> int:
         """returns length of slot_df"""
         return len(self.slot_df)
