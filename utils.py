@@ -86,11 +86,7 @@ def rename_columns(df: pd.DataFrame, original_columns: list[str], new_columns: l
     return df.rename(columns=rename_mapping)
 
 
-def combine_single_row_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:
-    print(len(df1), len(df2))
-    print(df1.head())
-    print(df2.head())
-    
+def combine_single_row_dfs(df1: pd.DataFrame, df2: pd.DataFrame) -> pd.DataFrame:    
     # Ensure both DataFrames have only one row
     if len(df1) != 1 or len(df2) != 1:
         raise ValueError("Both DataFrames must have exactly one row.")
@@ -127,10 +123,10 @@ def prepare_input_data(slot_df: pd.DataFrame, input_localization_data: pd.DataFr
     return combined_df2
 
 
-def drop_cols(df, cols_to_drop):
+def drop_cols(df, cols_to_drop: list[str]) -> pd.DataFrame:
     return df.drop(columns=cols_to_drop, inplace=True)
 
-def add_categoricals(df, categorical_cols, source_col):
+def add_categoricals(df, categorical_cols: list[str], source_col: str) -> None:
     # Iterate through each categorical column
     for col in categorical_cols:
         # Check if the value in source_col is a substring of the column name
@@ -165,14 +161,14 @@ def add_rolling_means_for_specific_criteria(df: pd.DataFrame, columns_to_normali
 
 
 
-def add_site_id_categorical(df, site_id, site_id_possibilities):
+def add_site_id_categorical(df, site_id: str, site_id_possibilities: list[str]) -> None:
     for site in site_id_possibilities:
         if site_id in site:
             df[site] = int(1)
         else:
             df[site] = int(0)
 
-def get_n_random_input_rows_from_csv(n, csv_path):
+def get_n_random_input_rows_from_csv(n: int, csv_path: str) -> list[pd.DataFrame]:
     df = pd.read_csv(csv_path)
     row_lst = []
     for _ in range(n):

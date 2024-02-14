@@ -5,7 +5,7 @@ import utils
 
 
 class SlotDataFrame:
-    def __init__(self, main_df, fryer_slot_id, config_dict) -> None:
+    def __init__(self, main_df: pd.DataFrame, fryer_slot_id: int, config_dict: dict) -> None:
         """instantiates slot_df from main df along with row lim, lim"""
         self.config_dict = config_dict
         self.slot_df_len_limit = config_dict["SLOT_DF_LEN_LIMIT"]
@@ -23,7 +23,7 @@ class SlotDataFrame:
         del(self.slot_df)
         self.slot_df = shortened_df
 
-    def add_row(self, incoming_row) -> None:
+    def add_row(self, incoming_row: pd.DataFrame) -> None:
         """takes in incoming row in the form of a list, pops off oldest row in df if necessary
         adds latest row to slot_df"""
         if self.get_len >= self.slot_df_len_limit:
