@@ -202,14 +202,42 @@ def query_offsets(start_time, end_time):
     offsets_df = pd.read_sql_query(text(offsets_query), con=chippy_log_db_con)
     return offsets_df
 
-def merge_behaviors_and_offsets(behaviors_df, offsets_df):
+def get_model_rows(start_time, end_time):
+    behaviors_df = query_behaviors(start_time, end_time)
+    offsets_df = query_offsets(start_time, end_time)
+    return behaviors_df, offsets_df
+
+def _main():
+    simple_chef_db_con = create_engine(sc_db_string)
+    start_time = time.time()
+    behaviors_start_time = "CURRENT_TIMESTAMP - INTERVAL '10' DAY"
+    behaviors_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
+    behaviors_query = BEHAVIORS_QUERY.format(start_time=behaviors_start_time, end_time=behaviors_end_time)
+    behaviors_df = pd.read_sql_query(text(behaviors_query), con=simple_chef_db_con)
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"\nbehaviors_df creation duration: {execution_time}.\n")
+
+    offsets_start_time = "CURRENT_TIMESTAMP - INTERVAL '20' DAY"
+    offsets_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
+    chippy_log_db_con = create_engine(cl_db_string)
+    start_time = time.time()
+    offsets_query = OFFSETS_QUERY.format(start_time=offsets_start_time, end_time=offsets_end_time)
+    offsets_df = pd.read_sql_query(text(offsets_query), con=chippy_log_db_con)
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"\noffsets_df creation duration: {execution_time}.\n")
+
     offsets_df.drop_duplicates(keep='first', inplace=True)
+
     offsets_df['basket_id'] = offsets_df['basket_id'].astype(float)
     offsets_df['fryer_slot_id'] = offsets_df['fryer_slot_id'].astype(int)
 
+    start_time = time.time()
+
     if behaviors_df.empty:
         print("behaviors_df is empty")
-        return behaviors_df
+        exit()
 
     extra_columns = [
         "fryer_slot_x_offset_abs",
@@ -395,34 +423,11 @@ def merge_behaviors_and_offsets(behaviors_df, offsets_df):
 
         behaviors_df.loc[i, b_row.index] = b_row
 
-        return behaviors_df
+    stop_time = time.time()
+    execution_time = stop_time - start_time
+    print(f"\nprocessing offsets duration: {execution_time}.\n")
 
-def get_combined_df(start_time, end_time):
-    behaviors_df = query_behaviors(start_time, end_time)
-    offsets_df = query_offsets(start_time, end_time)
-    return merge_behaviors_and_offsets(behaviors_df, offsets_df)
-
-def _main():
-    simple_chef_db_con = create_engine(sc_db_string)
-    start_time = time.time()
-    behaviors_start_time = "CURRENT_TIMESTAMP - INTERVAL '10' DAY"
-    behaviors_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
-    behaviors_query = BEHAVIORS_QUERY.format(start_time=behaviors_start_time, end_time=behaviors_end_time)
-    behaviors_df = pd.read_sql_query(text(behaviors_query), con=simple_chef_db_con)
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print(f"\nbehaviors_df creation duration: {execution_time}.\n")
-
-    offsets_start_time = "CURRENT_TIMESTAMP - INTERVAL '20' DAY"
-    offsets_end_time = "CURRENT_TIMESTAMP - INTERVAL '3' DAY"
-    chippy_log_db_con = create_engine(cl_db_string)
-    start_time = time.time()
-    offsets_query = OFFSETS_QUERY.format(start_time=offsets_start_time, end_time=offsets_end_time)
-    offsets_df = pd.read_sql_query(text(offsets_query), con=chippy_log_db_con)
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print(f"\noffsets_df creation duration: {execution_time}.\n")
-
+    behaviors_df.to_csv("behaviors_df.csv")
 
 
 

@@ -1,7 +1,7 @@
 import pandas as pd
 from slot_dataframe import SlotDataFrame
 from predictor import Predictor
-
+from unoptimized_query2 import get_combined_df
 
 class MainDataFrame:
     def __init__(self, config_dict)-> None:
@@ -12,8 +12,8 @@ class MainDataFrame:
 
         if config_dict['LOAD_CSV']:
             self.main_df = pd.read_csv(config_dict['CSV_PATH'])
-        elif not config_dict["LOAD_CSV"]:
-            pass
+        else:
+            self.main_df = get_combined_df(start_time=initial_start)
 
         fryer_slot_id_list = [1,2,3,4,5,6,7,8]
         self.fryer_df_dict = dict()

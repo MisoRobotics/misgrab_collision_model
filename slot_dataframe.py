@@ -33,7 +33,7 @@ class SlotDataFrame:
         self.slot_df = pd.DataFrame([incoming_row], columns=self.slot_df.columns).append(self.slot_df, ignore_index=True)
     
 
-    def get_model_input(self, incoming_localization_data) -> pd.DataFrame:
+    def get_model_input(self, incoming_localization_data: pd.DataFrame) -> pd.DataFrame:
         """takes in the incoming localization data, adds the other feature columns to it 
         including average based ones, returns one row df to be used as input to pred model"""
         new_slot_df = utils.rename_columns(self.slot_df, self.config_dict["COLS_TO_RENAME"], self.config_dict["COLS_TO_RENAME_TO"])
@@ -44,20 +44,3 @@ class SlotDataFrame:
                                                                    self.config_dict["COL_TO_DROP_EARLY"], self.config_dict["SITE_ID"], self.config_dict["SITE_ID_POSSIBILITIES"])
 
         return combined_input_and_slot_avgs_df
-    
-# df_to_test = pd.read_csv(CSV_PATH) #IGNORE
-
-
-#PAIR DOWN SLOT DATAFRAME, ADD COLS FOR CATEGORIES
-
-# new_df = create_slot_df(df_to_test, 'misgrabs', 50000, 4, FEATURE_DUMMY_DICT)
-
-#RENAME DATAFRAME COLS IN SLOT DF
-# new_df = rename_columns(new_df, COLS_TO_RENAME, COLS_TO_RENAME_TO) 
-
-
-#PICK RANDOM SAMPLE INPUT ROW
-# input_df = pd.read_csv(CSV_PATH).sample(n=1)
-
-
-# combined_df = prepare_input_data(new_df, input_df, AVG_WINDOWS, ec_col, 56, 4, 'frying', FEATURE_DUMMY_DICT, COLS_TO_RENAME, COLS_TO_RENAME_TO, COL_TO_DROP_EARLY, "wc26")
