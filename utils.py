@@ -175,11 +175,7 @@ def get_n_random_input_rows_from_csv(n: int, csv_path: str) -> list[pd.DataFrame
         row_lst.append(df.sample(n=1))
     return row_lst
 
-# def convert_str_time(str_time: str) -> str:
-#     new_str = f"STR_TO_DATE('{str_time}', '%Y-%m-%d %h:%m:%s')"
-#     return new_str
 def convert_str_time(str_time: str) -> str:
-    # new_str = f"STR_TO_DATE('{str_time}', '%Y-%m-%d %h:%m:%s')"#'%Y-%m-%d-%H:%i'
     new_str = f"STR_TO_DATE('{str_time}', '%Y-%m-%d-%H:%i')"#
     return new_str
 

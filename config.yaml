@@ -1,5 +1,7 @@
 SLOT_DF_LEN_LIMIT: 2500
 MAIN_DF_LEN_LIMIT: 15000
+HIGH_THRESH: 0.000949
+LOW_THRESH: 0.000948
 AVG_WINDOWS:
 - 1
 - 2
@@ -701,7 +703,7 @@ FEATURE_DUMMY_DICT:
   - fryer_slot_id_7
   - fryer_slot_id_8
 LOAD_CSV_ENABLED: true
-MODEL_PATH: ./sam_test_mode_1707898100.0401187 #/home/sam/Downloads/misgrab_prediction/models/test_rename
+MODEL_PATH: /home/sam/Downloads/models_from_beast/saved_models/sam_2-14_general_1707909732.7996707 #./sam_test_mode_1707898100.0401187 #/home/sam/Downloads/misgrab_prediction/models/test_rename
 SITE_ID_POSSIBILITIES:
 - site_id_jb93
 - site_id_wc26
